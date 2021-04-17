@@ -8,6 +8,71 @@ const connection = mysql.createConnection({
   database: "great_bay",
 });
 
+let currentUserId;
+
+const login = () => {
+  connection.query("SELECT * FROM users", (err, data) => {
+    if (err) throw err;
+
+    inquirer
+      .prompt([
+        {
+          type: "confirm",
+          name: "registered",
+          message: "Are you registered?",
+        },
+        {
+          type: "input",
+          name: "username",
+          message: "Please enter your username.",
+        },
+        {
+          type: "password",
+          name: "password",
+          message: "Please enter your password.",
+        },
+      ])
+      .then(({ registered, username, password }) => {
+        const foundUser = data.find((user) => user.username === username);
+        if (registered) {
+          if (foundUser) {
+            if (foundUser.user_password === password) {
+              console.log("You're logged in!\n");
+              currentUserId = foundUser.id;
+              init();
+            } else {
+              console.log(
+                "Username or password is incorrect. Please try again.\n"
+              );
+              login();
+            }
+          } else {
+            console.log(
+              "Username or password is incorrect. Please try again.\n"
+            );
+            login();
+          }
+        } else {
+          if (foundUser) {
+            console.log("Username is already taken. Please try again.\n");
+            login();
+          } else {
+            connection.query(
+              "INSERT INTO users SET ?",
+              { username, user_password: password },
+              (err, res) => {
+                if (err) throw err;
+                currentUserId = res.insertId;
+                console.log(`${username}, you are now registered!\n`);
+                init();
+              }
+            );
+          }
+        }
+      });
+  });
+};
+
 const init = () => {
   inquirer
     .prompt([
@@ -113,5 +178,5 @@ const post = () => {
 connection.connect((err) => {
   if (err) throw err;
   console.log(`connected as id ${connection.threadId}\n`);
-  init();
+  login();
 });
