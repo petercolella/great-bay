@@ -33,8 +33,53 @@ const init = () => {
 };
 
 const bid = () => {
-  console.log("bidding");
-  init();
+  connection.query("SELECT * FROM items", (err, data) => {
+    if (err) throw err;
+
+    inquirer
+      .prompt([
+        {
+          type: "list",
+          name: "bidItemId",
+          choices: data.map(({ id, item_description }) => {
+            return { name: item_description, value: id };
+          }),
+          message: "What item would you like to bid on?",
+        },
+        {
+          type: "input",
+          name: "bid",
+          message: "What is your bid?",
+          validate: (value) => !isNaN(value) || "Please enter a number.",
+          filter: (value) => parseFloat(value).toFixed(2),
+        },
+      ])
+      .then(({ bidItemId, bid }) => {
+        const bidItem = data.find((item) => item.id === bidItemId);
+
+        if (bid > bidItem.highest_bid) {
+          connection.query(
+            "UPDATE items SET ? WHERE ?",
+            [
+              {
+                highest_bid: bid,
+              },
+              {
+                id: bidItemId,
+              },
+            ],
+            (err) => {
+              if (err) throw err;
+              console.log("You have the highest bid!\n");
+              init();
+            }
+          );
+        } else {
+          console.log("Sorry, your bid is too low.\n");
+          init();
+        }
+      });
+  });
 };
 
 const post = () => {
