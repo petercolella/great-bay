@@ -38,8 +38,31 @@ const bid = () => {
 };
 
 const post = () => {
-  console.log("posting");
-  init();
+  inquirer
+    .prompt([
+      {
+        type: "input",
+        name: "description",
+        message: "What is the item description?",
+      },
+      {
+        type: "input",
+        name: "bid",
+        message: "What is the starting bid?",
+        validate: (value) => !isNaN(value) || "Please enter a number.",
+      },
+    ])
+    .then(({ description, bid }) => {
+      connection.query(
+        "INSERT INTO items SET ?",
+        { item_description: description, highest_bid: bid },
+        (err, res) => {
+          if (err) throw err;
+          console.log(`${res.affectedRows} item(s) inserted!\n`);
+          init();
+        }
+      );
+    });
 };
 
 connection.connect((err) => {
