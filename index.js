@@ -39,24 +39,24 @@ const login = () => {
         if (registered) {
           if (foundUser) {
             if (foundUser.user_password === password) {
-              console.log("You're logged in!\n");
+              console.log("\nYou're logged in!\n");
               currentUserId = foundUser.id;
               init();
             } else {
               console.log(
-                "Username or password is incorrect. Please try again.\n"
+                "\nUsername or password is incorrect. Please try again.\n"
               );
               login();
             }
           } else {
             console.log(
-              "Username or password is incorrect. Please try again.\n"
+              "\nUsername or password is incorrect. Please try again.\n"
             );
             login();
           }
         } else {
           if (foundUser) {
-            console.log("Username is already taken. Please try again.\n");
+            console.log("\nUsername is already taken. Please try again.\n");
             login();
           } else {
             connection.query(
@@ -65,7 +65,7 @@ const login = () => {
               (err, res) => {
                 if (err) throw err;
                 currentUserId = res.insertId;
-                console.log(`${username}, you are now registered!\n`);
+                console.log(`\n${username}, you are now registered!\n`);
                 init();
               }
             );
@@ -76,33 +76,40 @@ const login = () => {
 };
 
 const init = () => {
+  const choiceArray = [
+    "View BID Menu",
+    "View POST menu",
+    "View SEARCH menu",
+    "View ADMIN menu",
+    "Switch Account",
+    "QUIT",
+  ];
   inquirer
     .prompt([
       {
         type: "list",
         name: "init",
-        choices: [
-          "View BID Menu",
-          "View POST menu",
-          "View ADMIN menu",
-          "Switch Account",
-          "QUIT",
-        ],
+        choices: choiceArray,
         message: "What would you like to do?",
       },
     ])
     .then(({ init }) => {
-      switch (init) {
-        case "View BID Menu":
+      const choiceIndex = choiceArray.indexOf(init);
+
+      switch (choiceIndex) {
+        case 0:
           bidMenu();
           break;
-        case "View POST menu":
+        case 1:
           postMenu();
           break;
-        case "View ADMIN menu":
+        case 2:
+          searchMenu();
+          break;
+        case 3:
           adminMenu();
           break;
-        case "Switch Account":
+        case 4:
           login();
           break;
         default:
@@ -152,12 +159,12 @@ const bid = () => {
               ],
               (err) => {
                 if (err) throw err;
-                console.log("You have the highest bid!\n");
+                console.log("\nYou have the highest bid!\n");
                 init();
               }
             );
           } else {
-            console.log("Sorry, your bid is too low.\n");
+            console.log("\nSorry, your bid is too low.\n");
             init();
           }
         });
@@ -394,7 +401,7 @@ const post = () => {
         },
         (err, res) => {
           if (err) throw err;
-          console.log(`${res.affectedRows} item(s) inserted!\n`);
+          console.log(`\n${res.affectedRows} item(s) inserted!\n`);
           init();
         }
       );
@@ -436,6 +443,73 @@ const postMenu = () => {
         default:
           postMenu();
       }
+    });
+};
+
+const searchMenu = () => {
+  inquirer
+    .prompt([
+      {
+        type: "list",
+        name: "search",
+        choices: [
+          { name: "Item", value: "item_description" },
+          { name: "User", value: "username" },
+        ],
+        message: "Would you like to search by item or by user?",
+      },
+      {
+        type: "input",
+        name: "value",
+        message: "What keyword would you like to search for?",
+        when: ({ search }) => search === "item_description",
+      },
+      {
+        type: "input",
+        name: "value",
+        message: "What username would you like to search for?",
+        when: ({ search }) => search === "username",
+      },
+    ])
+    .then(({ search, value }) => {
+      connection.query(
+        `
+      SELECT auctions.id, item_description, starting_bid, is_auction_open, username 
+      FROM auctions LEFT JOIN users 
+      ON auctions.created_by_id = users.id 
+      WHERE ?? LIKE ?`,
+        [search, `%${value}%`],
+        (err, data) => {
+          if (err) throw err;
+
+          if (!data.length) {
+            console.log("\nYour search didn't return any results.\n");
+            return searchMenu();
+          }
+          console.log(
+            `\nAuctions containing the ${
+              search === "item_description" ? "keyword" : "username"
+            } "${value}":`
+          );
+          data.forEach(
+            ({
+              id,
+              item_description,
+              starting_bid,
+              is_auction_open,
+              username,
+            }) => {
+              console.log(
+                `${id} | Item: ${item_description} | Starting Bid: ${starting_bid} | by User: ${username} | ${
+                  is_auction_open ? "Open" : "Closed"
+                }`
+              );
+            }
+          );
+          console.log("\n");
+          init();
+        }
+      );
     });
 };
 
