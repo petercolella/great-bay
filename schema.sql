@@ -22,3 +22,6 @@ CREATE TABLE users (
     is_admin BOOLEAN DEFAULT false,
     PRIMARY KEY (id)
 );
+
+INSERT INTO users (username, user_password, is_admin)
+VALUES ('admin', 'admin', true);
