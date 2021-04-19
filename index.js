@@ -100,54 +100,57 @@ const init = () => {
 };
 
 const bid = () => {
-  connection.query("SELECT * FROM auctions", (err, data) => {
-    if (err) throw err;
+  connection.query(
+    "SELECT * FROM auctions WHERE is_auction_open=1",
+    (err, data) => {
+      if (err) throw err;
 
-    inquirer
-      .prompt([
-        {
-          type: "list",
-          name: "bidItemId",
-          choices: data.map(({ id, item_description }) => {
-            return { name: item_description, value: id };
-          }),
-          message: "What item would you like to bid on?",
-        },
-        {
-          type: "input",
-          name: "bid",
-          message: "What is your bid?",
-          validate: (value) => !isNaN(value) || "Please enter a number.",
-          filter: (value) => parseFloat(value).toFixed(2),
-        },
-      ])
-      .then(({ bidItemId, bid }) => {
-        const bidItem = data.find((item) => item.id === bidItemId);
+      inquirer
+        .prompt([
+          {
+            type: "list",
+            name: "bidItemId",
+            choices: data.map(({ id, item_description }) => {
+              return { name: item_description, value: id };
+            }),
+            message: "What item would you like to bid on?",
+          },
+          {
+            type: "input",
+            name: "bid",
+            message: "What is your bid?",
+            validate: (value) => !isNaN(value) || "Please enter a number.",
+            filter: (value) => parseFloat(value).toFixed(2),
+          },
+        ])
+        .then(({ bidItemId, bid }) => {
+          const bidItem = data.find((item) => item.id === bidItemId);
 
-        if (bid > bidItem.highest_bid) {
-          connection.query(
-            "UPDATE auctions SET ? WHERE ?",
-            [
-              {
-                highest_bid: bid,
-                highest_bidder_id: currentUserId,
-              },
-              {
-                id: bidItemId,
-              },
-            ],
-            (err) => {
-              if (err) throw err;
-              console.log("You have the highest bid!\n");
-              init();
-            }
-          );
-        } else {
-          console.log("Sorry, your bid is too low.\n");
-          init();
-        }
-      });
-  });
+          if (bid > bidItem.highest_bid) {
+            connection.query(
+              "UPDATE auctions SET ? WHERE ?",
+              [
+                {
+                  highest_bid: bid,
+                  highest_bidder_id: currentUserId,
+                },
+                {
+                  id: bidItemId,
+                },
+              ],
+              (err) => {
+                if (err) throw err;
+                console.log("You have the highest bid!\n");
+                init();
+              }
+            );
+          } else {
+            console.log("Sorry, your bid is too low.\n");
+            init();
+          }
+        });
+    }
+  );
 };
 
 const getUserAuctionArray = async () => {
