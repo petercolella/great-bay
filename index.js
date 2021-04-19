@@ -81,14 +81,14 @@ const init = () => {
       {
         type: "list",
         name: "init",
-        choices: ["BID on an item", "View POST menu", "QUIT"],
+        choices: ["View BID Menu", "View POST menu", "QUIT"],
         message: "What would you like to do?",
       },
     ])
     .then(({ init }) => {
       switch (init) {
-        case "BID on an item":
-          bid();
+        case "View BID Menu":
+          bidMenu();
           break;
         case "View POST menu":
           postMenu();
@@ -151,6 +151,65 @@ const bid = () => {
         });
     }
   );
+};
+
+const viewHighest = () => {
+  connection.query(
+    "SELECT * FROM auctions WHERE highest_bidder_id = ?",
+    [currentUserId],
+    (err, data) => {
+      if (err) throw err;
+
+      if (!data.length) {
+        console.log("\nYou're not the highest bidder on any auctions.\n");
+        return init();
+      }
+
+      console.log("\nAuctions Where You're the Highest Bidder:\n");
+      data.forEach(
+        ({ item_description, starting_bid, highest_bid, is_auction_open }) => {
+          console.log(
+            `Item: ${item_description} | Starting Bid: ${starting_bid} | Highest Bid: ${highest_bid} | ${
+              is_auction_open ? "Open" : "Closed"
+            }`
+          );
+        }
+      );
+      console.log("\n");
+
+      init();
+    }
+  );
+};
+
+const bidMenu = () => {
+  const choiceArray = [
+    "View auctions in which you're the leading bidder.",
+    "BID on an item",
+  ];
+  inquirer
+    .prompt([
+      {
+        type: "list",
+        name: "bidChoice",
+        choices: choiceArray,
+        message: "Please select what you would like to do.",
+      },
+    ])
+    .then(({ bidChoice }) => {
+      const choiceIndex = choiceArray.indexOf(bidChoice);
+
+      switch (choiceIndex) {
+        case 0:
+          viewHighest();
+          break;
+        case 1:
+          bid();
+          break;
+        default:
+          bidMenu();
+      }
+    });
 };
 
 const getUserAuctionArray = async () => {
