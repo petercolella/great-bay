@@ -81,7 +81,13 @@ const init = () => {
       {
         type: "list",
         name: "init",
-        choices: ["View BID Menu", "View POST menu", "View ADMIN menu", "QUIT"],
+        choices: [
+          "View BID Menu",
+          "View POST menu",
+          "View ADMIN menu",
+          "Switch Account",
+          "QUIT",
+        ],
         message: "What would you like to do?",
       },
     ])
@@ -95,6 +101,9 @@ const init = () => {
           break;
         case "View ADMIN menu":
           adminMenu();
+          break;
+        case "Switch Account":
+          login();
           break;
         default:
           connection.end();
